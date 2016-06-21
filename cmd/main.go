@@ -27,9 +27,9 @@ func (s *summary) update(j *mm1.Job) {
 
 func (s *summary) String() string {
 	out := fmt.Sprintf("Number of jobs completed: %d Jobs", s.n)
-	out = fmt.Sprintf("%s\nMean Interarrival Duration: %0.2f Seconds", out,
+	out = fmt.Sprintf("%s\nMean Interarrival Duration: %0.5f Seconds", out,
 		s.si/float64(s.n))
-	out = fmt.Sprintf("%s\nMean Service Duration: %0.2f Seconds\n", out,
+	out = fmt.Sprintf("%s\nMean Service Duration: %0.5f Seconds\n", out,
 		s.ss/float64(s.n))
 	return out
 }
@@ -52,7 +52,6 @@ func run() int {
 		return 1
 	}
 	start := q.Start()
-	defer q.Stop()
 
 	end := time.NewTicker(runDur)
 
