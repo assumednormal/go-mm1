@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math"
 	"math/rand"
-	"runtime"
 	"time"
 )
 
@@ -30,7 +29,6 @@ type MM1 struct {
 	jobChan  chan *Job  // channel for jobs
 	DoneChan chan *Job  // channel for completed jobs
 	rng      *rand.Rand // random number generator
-	stopChan chan bool  // tell arrival and service goroutines to stop
 }
 
 // New returns an M/M/1 queue with arrival rate lambda and service rate mu.
@@ -45,11 +43,11 @@ func New(lambda, mu float64) (*MM1, error) {
 		return nil, ErrMuNotGreaterThanLambda
 	}
 
-	// set length of channel to expected length + 10 * sd of length, to be safe
+	// set length of channel to 1 + expected length + 10 * sd of length
 	rho := lambda / mu
 	expectedLength := rho / (1 - rho)
 	sdLength := math.Sqrt(rho / math.Pow(1-rho, 2))
-	chanLength := int64(expectedLength + 10*sdLength)
+	chanLength := int64(1 + expectedLength + 10*sdLength)
 
 	return &MM1{
 		lambda:   lambda,
@@ -57,7 +55,6 @@ func New(lambda, mu float64) (*MM1, error) {
 		jobChan:  make(chan *Job, chanLength),
 		DoneChan: make(chan *Job, chanLength),
 		rng:      rand.New(rand.NewSource(time.Now().UnixNano())),
-		stopChan: make(chan bool, 2),
 	}, nil
 }
 
@@ -68,46 +65,25 @@ func (q *MM1) Start() time.Time {
 	return time.Now()
 }
 
-// Stop closes job and done channels.
-func (q *MM1) Stop() {
-	// send two messages on stopChan to signal goroutines
-	q.stopChan <- true
-	q.stopChan <- true
-
-	// close channels in q
-	close(q.jobChan)
-	close(q.DoneChan)
-	close(q.stopChan)
-}
-
 func (q *MM1) arrivalProcess() {
 	for {
-		select {
-		case <-q.stopChan:
-			runtime.Goexit()
-		default:
-			dur := time.Duration(int64(q.rng.ExpFloat64() / q.lambda * float64(1e9)))
-			timer := time.NewTimer(dur)
-			<-timer.C
-			q.jobChan <- &Job{
-				EnterQueue: time.Now(),
-			}
+		dur := time.Duration(int64(q.rng.ExpFloat64() / q.lambda * float64(1e9)))
+		timer := time.NewTimer(dur)
+		<-timer.C
+		q.jobChan <- &Job{
+			EnterQueue: time.Now(),
 		}
 	}
 }
 
 func (q *MM1) serviceProcess() {
 	for {
-		select {
-		case <-q.stopChan:
-			runtime.Goexit()
-		case j := <-q.jobChan:
-			j.StartService = time.Now()
-			dur := time.Duration(int64(q.rng.ExpFloat64() / q.mu * float64(1e9)))
-			timer := time.NewTimer(dur)
-			<-timer.C
-			j.EndService = time.Now()
-			q.DoneChan <- j
-		}
+		j := <-q.jobChan
+		j.StartService = time.Now()
+		dur := time.Duration(int64(q.rng.ExpFloat64() / q.mu * float64(1e9)))
+		timer := time.NewTimer(dur)
+		<-timer.C
+		j.EndService = time.Now()
+		q.DoneChan <- j
 	}
 }
