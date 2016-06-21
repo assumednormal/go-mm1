@@ -13,7 +13,8 @@ var ErrLambdaNonPositive = errors.New("arrival rate (lambda) must be positive")
 
 // ErrMuNotGreaterThanLambda occurs when the service rate (mu) is not greater
 // than the arrival rate (lambda).
-var ErrMuNotGreaterThanLambda = errors.New("service rate (mu) must be greater than arrival rate (lambda)")
+var ErrMuNotGreaterThanLambda = errors.New(
+	"service rate (mu) must be greater than arrival rate (lambda)")
 
 // Job contains data on an individual job flowing through the queue.
 type Job struct {

@@ -39,7 +39,8 @@ func run() int {
 	var runDur time.Duration
 	flag.Float64Var(&lambda, "arrival.rate", 0, "arrival rate, lambda")
 	flag.Float64Var(&mu, "service.rate", 0, "service rate, mu")
-	flag.DurationVar(&runDur, "run.duration", time.Duration(0), "amount of time to run simulation")
+	flag.DurationVar(&runDur, "run.duration", time.Duration(0),
+		"amount of time to run simulation")
 	flag.Parse()
 
 	sigs := make(chan os.Signal, 1)
