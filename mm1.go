@@ -33,7 +33,6 @@ type MM1 struct {
 }
 
 // New returns an M/M/1 queue with arrival rate lambda and service rate mu.
-// Completed jobs are json encoded on w.
 func New(lambda, mu float64) (*MM1, error) {
 	// check that lambda is positive
 	if lambda <= 0 {
@@ -45,8 +44,7 @@ func New(lambda, mu float64) (*MM1, error) {
 		return nil, ErrMuNotGreaterThanLambda
 	}
 
-	// set length of channel to expected queue length + 10 * sd of queue length, to
-	// be somewhat safe
+	// set length of channel to expected length + 10 * sd of length, to be safe
 	rho := lambda / mu
 	expectedLength := rho / (1 - rho)
 	sdLength := math.Sqrt(rho / math.Pow(1-rho, 2))
@@ -62,7 +60,7 @@ func New(lambda, mu float64) (*MM1, error) {
 	}, nil
 }
 
-// Start starts the arrival process and servicing in separate goroutines.
+// Start starts the arrival and servicing processes in separate goroutines.
 func (q *MM1) Start() time.Time {
 	go q.arrivalProcess()
 	go q.serviceProcess()
